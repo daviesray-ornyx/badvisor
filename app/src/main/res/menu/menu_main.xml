@@ -1,15 +1,21 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/miFilter"
+        android:icon="@drawable/core_search"
+        app:showAsAction="always"
+        android:title="Refresh">
+    </item>
+    <item
         android:id="@+id/miRefresh"
         android:icon="@drawable/core_refresh"
-        app:showAsAction="always"
+        app:showAsAction="ifRoom"
         android:title="Refresh">
     </item>
     <item
         android:id="@+id/miShare"
         android:icon="@drawable/core_share"
-        app:showAsAction="always"
+        app:showAsAction="ifRoom"
         android:title="Share"
         android:actionProviderClass=
             "android.widget.ShareActionProvider">

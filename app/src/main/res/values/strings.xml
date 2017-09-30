@@ -4,6 +4,8 @@
     <string name="title_activity_test">TestActivity</string>
 
     <string name="get_started">Get Started</string>
+    <string name="coming_soon_more_matches">More matches coming soon</string>
     <string name="select_country">SELECT YOUR COUNTRY</string>
     <string name="copyright">Copyright@2017</string>
+
 </resources>

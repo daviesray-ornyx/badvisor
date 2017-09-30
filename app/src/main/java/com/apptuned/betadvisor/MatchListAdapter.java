@@ -57,8 +57,6 @@ public class MatchListAdapter  extends RecyclerView.Adapter<MatchListAdapter.Mat
         resID = res.getIdentifier("com.apptuned.betadvisor:drawable/" + iconURL, null, null);
         holder.civAwayTeamLogo.setImageResource(resID);
 
-        holder.txtMatchDate.setText(new SimpleDateFormat("yyyy-MM-dd").format(currentMatch.getMatchDate()));
-
         holder.txtMatchTime.setText(new SimpleDateFormat("hh:mm").format(currentMatch.getMatchTime()));
 
         holder.txtAwayTeam.setText(currentMatch.getAwayTeam());
@@ -93,7 +91,6 @@ public class MatchListAdapter  extends RecyclerView.Adapter<MatchListAdapter.Mat
 
             txtHomeTeam = (TextView) itemView.findViewById(R.id.tv_home_team);
             txtAwayTeam = (TextView) itemView.findViewById(R.id.tv_away_team);
-            txtMatchDate = (TextView) itemView.findViewById(R.id.tv_match_date);
             txtMatchTime = (TextView) itemView.findViewById(R.id.tv_match_time);
             txtMatchPrediction = (TextView) itemView.findViewById(R.id.tv_match_prediction);
             civHomeTeamLogo = (CircularImageView) itemView.findViewById(R.id.civ_home_team_logo);

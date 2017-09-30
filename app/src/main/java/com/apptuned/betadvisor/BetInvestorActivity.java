@@ -1,14 +1,11 @@
 package com.apptuned.betadvisor;
 
-import android.annotation.TargetApi;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Handler;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.view.menu.ActionMenuItem;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -18,7 +15,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
-import android.widget.ShareActionProvider;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,12 +26,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.apptuned.betadvisor.JSONMatchParser;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -52,16 +47,20 @@ public class BetInvestorActivity extends AppCompatActivity {
     private SharedPreferences spConfig;
 
 
-    private SimpleDateFormat simpleDateFormat;
+    private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy");
+    private final SimpleDateFormat simpleFullDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 
     private JSONFileHandler jsonFileHandler;
     private JSONMatchParser jsonMatchParser;
-    private RecyclerView rvMatchList;
-    private TextView tvMatchlistHeader;
+    private TextView tvMatchlistHeader, tvMatchlistHeaderPlusOne, tvMatchlistHeaderPlusTwo;
 
     private Date lastSyncDateTime;
 
     private MenuItem miRefresh;
+
+    private RecyclerView rvMatchList, rvMatchlistPlusOne, rvMatchlistPlusTwo;
+    private ArrayList<Match> fullMatchlistArray;
+    private String currentLeague = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,32 +73,47 @@ public class BetInvestorActivity extends AppCompatActivity {
         initRotationAnimator();
 
         tvMatchlistHeader = (TextView)findViewById(R.id.tv_matchlist_header);
+        tvMatchlistHeaderPlusOne = (TextView)findViewById(R.id.tv_matchlist_header_plus_one);
+        tvMatchlistHeaderPlusTwo = (TextView)findViewById(R.id.tv_matchlist_header_plus_two);
         Date today = new Date();
-        String todayDate = new SimpleDateFormat("dd-MM-yyyy").format(today);
-        String toDate = new SimpleDateFormat("dd-MM-yyyy").format(today.getTime() + 3 * 24 * 60 * 60 * 1000);
-
-        tvMatchlistHeader.setText("PREDICTIONS: " + todayDate + " to " + toDate);
+        tvMatchlistHeader.setText(new SimpleDateFormat("E, dd MMMM yyyy").format(today));
+        tvMatchlistHeaderPlusOne.setText(new SimpleDateFormat("E, dd MMMM yyyy").format(today.getTime() + 1 * 24 * 60 * 60 * 1000));
+        tvMatchlistHeaderPlusTwo.setText(new SimpleDateFormat("E, dd MMMM yyyy").format(today.getTime() + 2 * 24 * 60 * 60 * 1000));
 
         jsonFileHandler = new JSONFileHandler(this);
         jsonMatchParser = new JSONMatchParser(this);
-        simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 
-        rvMatchList = (RecyclerView) findViewById(R.id.rv_match_list);
-        // Setting a linera layour manager to the recycler view
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getApplicationContext());
+        // First Matchlist RV
+        rvMatchList = (RecyclerView) findViewById(R.id.rv_match_list);
         rvMatchList.setLayoutManager(linearLayoutManager);
         DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(rvMatchList.getContext(),linearLayoutManager.getOrientation());
         dividerItemDecoration.setDrawable(getResources().getDrawable(R.drawable.divider_recyclerview));
         rvMatchList.addItemDecoration(dividerItemDecoration);
+
+        // Second Matchlist RV
+        rvMatchlistPlusOne = (RecyclerView) findViewById(R.id.rv_match_list_plus_one);
+        LinearLayoutManager linearLayoutManager2 = new LinearLayoutManager(getApplicationContext());
+        rvMatchlistPlusOne.setLayoutManager(linearLayoutManager2);
+        dividerItemDecoration = new DividerItemDecoration(rvMatchList.getContext(),linearLayoutManager.getOrientation());
+        dividerItemDecoration.setDrawable(getResources().getDrawable(R.drawable.divider_recyclerview));
+        rvMatchlistPlusOne.addItemDecoration(dividerItemDecoration);
+        // Third Matchlist RV
+        rvMatchlistPlusTwo = (RecyclerView) findViewById(R.id.rv_match_list_plus_two);
+        LinearLayoutManager linearLayoutManager3 = new LinearLayoutManager(getApplicationContext());
+        rvMatchlistPlusTwo.setLayoutManager(linearLayoutManager3);
+        dividerItemDecoration = new DividerItemDecoration(rvMatchList.getContext(),linearLayoutManager.getOrientation());
+        dividerItemDecoration.setDrawable(getResources().getDrawable(R.drawable.divider_recyclerview));
+        rvMatchlistPlusTwo.addItemDecoration(dividerItemDecoration);
 
         // TODO Check last_synced datetime value.. In shared preferences
         spConfig = getSharedPreferences("com.apptuned.betadvisor.Config", this.MODE_PRIVATE);
         String lastSyncString = spConfig.getString(LAST_SYNC_DATETIME, null);
         if(lastSyncString != null){
             try{
-                lastSyncDateTime = simpleDateFormat.parse(lastSyncString);
-                String todayString = simpleDateFormat.format(new Date());
-                if(getDifferenceDays(lastSyncDateTime, simpleDateFormat.parse(todayString)) > 1)
+                lastSyncDateTime = simpleFullDateFormat.parse(lastSyncString);
+                String todayString = simpleFullDateFormat.format(new Date());
+                if(getDifferenceDays(lastSyncDateTime, simpleFullDateFormat.parse(todayString)) > 1)
                     syncMatches(true);
                 else {
                     String jsonMatches = jsonFileHandler.readJSONFile(MATCHES_FILE);
@@ -108,7 +122,8 @@ public class BetInvestorActivity extends AppCompatActivity {
                         if(jsonMatchesArray == null || jsonMatchesArray.length() ==0)
                             syncMatches(true);
                         else
-                            updateRecyclerView(jsonMatchesArray);
+                            updateLeagueSelection();
+                            updateView(jsonMatchesArray);
                     }catch (JSONException e){
                         syncMatches(true);
                     }
@@ -120,15 +135,6 @@ public class BetInvestorActivity extends AppCompatActivity {
             syncMatches(true);
         }
 
-//        final Handler handler = new Handler();
-//        handler.postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                // TODO Create a function to get tips
-//                getBettingTips();
-//                getBettingTips();
-//            }
-//        }, 5000); // 1000 x 60 for a minute
     }
 
     @Override
@@ -159,27 +165,121 @@ public class BetInvestorActivity extends AppCompatActivity {
                 sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBodyText);
                 startActivity(Intent.createChooser(sharingIntent, "Shearing Option"));
                 return true;
+            case R.id.miFilter:
+                // Get relevant league list from the array
+                if(fullMatchlistArray == null || fullMatchlistArray.size() < 1)
+                    return true;
+                final ArrayList<String> leaguesArray = new ArrayList<String>();
+                leaguesArray.add("All");
+                for (Match match: fullMatchlistArray) {
+                    if(leaguesArray.contains(match.getLeague()))
+                        continue;
+                    else
+                        leaguesArray.add(match.getLeague());
+                }
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("Select a league");
+                builder.setItems(leaguesArray.toArray(new String[leaguesArray.size()]), new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int item) {
+                        // Do something with the selection
+
+                        ArrayList<Match> filteredMatches = new ArrayList<Match>();
+
+                        if(item == 0){
+                            for (Match match: fullMatchlistArray) {
+                                filteredMatches.add(match);
+                            }
+                            updateView(fullMatchlistArray);
+                            currentLeague = null;
+                        }
+                        else if(item > 0){
+                            currentLeague = leaguesArray.get(item);
+                            for (Match match: fullMatchlistArray) {
+                                if(leaguesArray.contains(match.getLeague()))
+                                {
+                                    filteredMatches.add(match);
+                                }
+                            }
+                        }
+                        else
+                            return;
+                        updateLeagueSelection();
+                        updateView(filteredMatches);
+                    }
+                });
+                AlertDialog alert = builder.create();
+                alert.show();
+
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    public void updateRecyclerView(JSONArray jsonMatchesArray){
-        ArrayList<Match> matchArrayList = new ArrayList<Match>();
+    public void updateView(JSONArray jsonMatchesArray){
+        fullMatchlistArray = new ArrayList<Match>();
         try{
             for (int i = 0; i < jsonMatchesArray.length(); i++) {
                 JSONObject obj = jsonMatchesArray.getJSONObject(i);
                 Match match = jsonMatchParser.parse(obj);
                 if(match != null)
-                    matchArrayList.add(match);
+                    fullMatchlistArray.add(match);
             }
-            Collections.sort(matchArrayList);
-            MatchListAdapter matchListAdapter = new MatchListAdapter(getApplicationContext(), matchArrayList);
-            rvMatchList.setAdapter(matchListAdapter);
+            Collections.sort(fullMatchlistArray);
+            // Onto updating the indicidual recyclerviews
+
+            Date today = new Date();
+            updateRecyclerView(today, rvMatchList);
+            updateRecyclerView(addDate(today, 1), rvMatchlistPlusOne);
+            updateRecyclerView(addDate(today, 2), rvMatchlistPlusTwo);
+
         }catch (JSONException e){
             e.printStackTrace();
         }
 
+    }
+
+    public void updateView(ArrayList<Match> matchesArray){
+        Collections.sort(matchesArray);
+        // Onto updating the indicidual recyclerviews
+
+        Date today = new Date();
+        updateRecyclerView(matchesArray, today, rvMatchList);
+        updateRecyclerView(matchesArray, addDate(today, 1), rvMatchlistPlusOne);
+        updateRecyclerView(matchesArray, addDate(today, 2), rvMatchlistPlusTwo);
+    }
+
+    public void updateRecyclerView(Date date, RecyclerView rvObj){
+        ArrayList<Match> filteredMatchList = new ArrayList<Match>();
+        for (Match match: this.fullMatchlistArray) {
+            if(simpleDateFormat.format(match.getMatchDate()).equalsIgnoreCase(simpleDateFormat.format(date))){
+                 if(currentLeague == null)
+                    filteredMatchList.add(match);
+                else if(match.getLeague().equalsIgnoreCase(currentLeague))
+                    filteredMatchList.add(match);
+                else
+                    continue;
+            }
+        }
+        MatchListAdapter matchListAdapter = new MatchListAdapter(getApplicationContext(), filteredMatchList);
+        rvObj.setAdapter(matchListAdapter);
+    }
+
+    public void updateRecyclerView(ArrayList<Match> matchArrayList, Date date, RecyclerView rvObj){
+        ArrayList<Match> filteredMatchList = new ArrayList<Match>();
+        for (Match match: matchArrayList) {
+            if(simpleDateFormat.format(match.getMatchDate()).equalsIgnoreCase(simpleDateFormat.format(date))){
+                if(currentLeague == null)
+                    filteredMatchList.add(match);
+                else if(match.getLeague().equalsIgnoreCase(currentLeague))
+                    filteredMatchList.add(match);
+                else
+                    continue;
+            }
+        }
+        MatchListAdapter matchListAdapter = new MatchListAdapter(getApplicationContext(), filteredMatchList);
+        rvObj.setAdapter(matchListAdapter);
     }
 
     public void syncMatches(boolean isManualSync){
@@ -189,10 +289,10 @@ public class BetInvestorActivity extends AppCompatActivity {
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONArray responseArray){
                 jsonFileHandler.writeJSONFile(MATCHES_FILE, responseArray.toString());
-                updateRecyclerView(responseArray);
-                //Update last sync date
-                endRotationAnimator();
+                updateView(responseArray);
                 syncMode = false;
+                currentLeague = null;
+                updateLeagueSelection();
                 spConfig.edit().putString(LAST_SYNC_DATETIME, simpleDateFormat.format(new Date())).commit();
                 Toast.makeText(getApplicationContext(), "Sync successful.", Toast.LENGTH_SHORT).show();
             }
@@ -250,7 +350,16 @@ public class BetInvestorActivity extends AppCompatActivity {
         Toast.makeText(this, "Get betting tips has been instantiated.", Toast.LENGTH_SHORT).show();
     }
 
-
+    public Date addDate(Date date, int daysToadd){
+        String resultString = simpleFullDateFormat.format(date.getTime() + daysToadd * 24 * 60 * 60 * 1000);
+        Date result = null;
+        try {
+            result = simpleFullDateFormat.parse(resultString);
+        }catch (ParseException e){
+            e.printStackTrace();
+        }
+        return result;
+    }
     @Override
     public void onBackPressed() {
         // your code.
@@ -259,5 +368,13 @@ public class BetInvestorActivity extends AppCompatActivity {
         System.exit(1);
     }
 
+    public void updateLeagueSelection(){
+        TextView tvLeagueHeader = (TextView)findViewById(R.id.tv_league_header);
+        if(currentLeague == null){
+            tvLeagueHeader.setText("All Leagues");
+        }
+        else
+            tvLeagueHeader.setText(currentLeague);
+    }
 
 }
