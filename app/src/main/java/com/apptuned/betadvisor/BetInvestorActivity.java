@@ -160,7 +160,7 @@ public class BetInvestorActivity extends AppCompatActivity {
             case R.id.miShare:
                 Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
                 sharingIntent.setType("text/plain");
-                String shareBodyText = "Check out the free Bet Advisor App at https://play.google.com/store/apps/details?id=com.jumia.android";
+                String shareBodyText = "Check out the free Bet Advisor App at https://play.google.com/store/apps/details?id=com.apptuned.betadvisor";
                 sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT,"Bet Advisor app");
                 sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBodyText);
                 startActivity(Intent.createChooser(sharingIntent, "Shearing Option"));
