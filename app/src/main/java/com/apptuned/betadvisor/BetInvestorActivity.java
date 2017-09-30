@@ -294,7 +294,6 @@ public class BetInvestorActivity extends AppCompatActivity {
                 currentLeague = null;
                 updateLeagueSelection();
                 spConfig.edit().putString(LAST_SYNC_DATETIME, simpleDateFormat.format(new Date())).commit();
-                Toast.makeText(getApplicationContext(), "Sync successful.", Toast.LENGTH_SHORT).show();
             }
 
             @Override
