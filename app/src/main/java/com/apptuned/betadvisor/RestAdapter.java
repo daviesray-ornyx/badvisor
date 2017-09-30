@@ -8,7 +8,7 @@ import com.loopj.android.http.*;
 
 public class RestAdapter {
 
-    private static final String BASE_URL = "http://ec2-18-220-210-214.us-east-2.compute.amazonaws.com:8000/"; // Machine localhost for local testing
+    private static final String BASE_URL = "http://ec2-18-220-210-214.us-east-2.compute.amazonaws.com/"; // Machine localhost for local testing
 
     private static AsyncHttpClient client = new AsyncHttpClient();
 
