@@ -26,20 +26,17 @@
             xmlns:app="http://schemas.android.com/apk/res-auto">
         </android.support.v7.widget.Toolbar>
 
-        <!--<RelativeLayout-->
-            <!--android:id="@+id/top_add_container"-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="42dp"-->
-            <!--android:background="@color/colorPrimaryLight">-->
 
-            <!--<TextView-->
-                <!--android:id="@+id/textView"-->
-                <!--android:layout_width="wrap_content"-->
-                <!--android:layout_height="wrap_content"-->
-                <!--android:layout_centerInParent="true"-->
-                <!--android:text="Advert to be here!!"-->
-                <!--android:textColor="@color/colorPrimaryDark" />-->
-        <!--</RelativeLayout>-->
+        <com.google.android.gms.ads.AdView
+            xmlns:ads="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/adView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            ads:adSize="BANNER"
+            ads:adUnitId="ca-app-pub-6699142760491850/2321919666">  <!-- ca-app-pub-3940256099942544/6300978111 Test -->
+        </com.google.android.gms.ads.AdView>
+
 
         <TextView
             android:id="@+id/tv_league_header"
@@ -131,6 +128,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/colorWhite"></android.support.v7.widget.RecyclerView>
+
+        <com.google.android.gms.ads.AdView
+            xmlns:ads="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/adViewBottom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            ads:adSize="BANNER"
+            ads:adUnitId="ca-app-pub-6699142760491850/8002649425"> <!-- ca-app-pub-3940256099942544/6300978111 Test -->
+        </com.google.android.gms.ads.AdView>
 
         <TextView
             android:layout_width="match_parent"

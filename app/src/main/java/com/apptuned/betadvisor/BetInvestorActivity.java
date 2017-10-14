@@ -20,6 +20,9 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
 import com.loopj.android.http.JsonHttpResponseHandler;
 
 import org.json.JSONArray;
@@ -35,7 +38,17 @@ import java.util.concurrent.TimeUnit;
 
 import cz.msebera.android.httpclient.Header;
 
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.InterstitialAd;
+
+
+
+
+
 public class BetInvestorActivity extends AppCompatActivity {
+
+    private boolean backPressed = false;
 
     private static boolean syncMode = false;
 
@@ -62,6 +75,9 @@ public class BetInvestorActivity extends AppCompatActivity {
     private ArrayList<Match> fullMatchlistArray;
     private String currentLeague = null;
 
+    private AdView mAdView, adViewBottom;
+    private InterstitialAd mInterstitialAd;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,6 +87,34 @@ public class BetInvestorActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         initRotationAnimator();
+
+        MobileAds.initialize(this, "ca-app-pub-6699142760491850~3746735879"); // Passes context and APP_ID
+
+        mAdView = (AdView) findViewById(R.id.adView);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        mAdView.loadAd(adRequest);
+
+        adViewBottom = (AdView) findViewById(R.id.adViewBottom);
+        AdRequest adRequestBottom = new AdRequest.Builder().build();
+        adViewBottom.loadAd(adRequestBottom);
+
+        //adViewBottom
+
+        //TODO Add event listeners to mAdview
+
+        mInterstitialAd = new InterstitialAd(this);
+        mInterstitialAd.setAdUnitId("ca-app-pub-6699142760491850/2115897926"); // ca-app-pub-3940256099942544/1033173712 Test
+        mInterstitialAd.loadAd(new AdRequest.Builder().build());
+
+        mInterstitialAd.setAdListener(new AdListener(){
+            @Override
+            public void onAdClosed(){
+                // This is the only add we had. Close the app for now
+                if(backPressed){
+                    closeApp();
+                }
+            }
+        });
 
         tvMatchlistHeader = (TextView)findViewById(R.id.tv_matchlist_header);
         tvMatchlistHeaderPlusOne = (TextView)findViewById(R.id.tv_matchlist_header_plus_one);
@@ -361,10 +405,14 @@ public class BetInvestorActivity extends AppCompatActivity {
     }
     @Override
     public void onBackPressed() {
+        backPressed = true;
         // your code.
-        moveTaskToBack(true);
-        android.os.Process.killProcess(android.os.Process.myPid());
-        System.exit(1);
+        // TODO show Interstitial As
+        if(mInterstitialAd.isLoaded()){
+            mInterstitialAd.show();
+        }else {
+           closeApp();
+        }
     }
 
     public void updateLeagueSelection(){
@@ -376,4 +424,9 @@ public class BetInvestorActivity extends AppCompatActivity {
             tvLeagueHeader.setText(currentLeague);
     }
 
+    public void closeApp(){
+        moveTaskToBack(true);
+        android.os.Process.killProcess(android.os.Process.myPid());
+        System.exit(1);
+    }
 }
